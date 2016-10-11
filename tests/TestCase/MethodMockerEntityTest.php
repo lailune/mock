@@ -220,41 +220,36 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 			результат - замокан? (или вернётся исходный) */
 			['this', false, false, false, true],
 			['this', false, false, true, true],
-			//['this', false, true, false, true],	// runkit restore fail (segfault for public)
-			//['this', false, true, true, true],	// runkit restore fail (segfault for public)
+			//['this', false, true, false, true],
+			//['this', false, true, true, true],
 			['this', true, false, false, false],
 			['this', true, false, true, false],
-			//['this', true, true, false, true],	// runkit restore fail (segfault for public)
-			//['this', true, true, true, true],		// runkit restore fail (segfault for public & private)
+			['this', true, true, false, true],
+			['this', true, true, true, true],
 
 
 			['self', false, false, false, true],
 			['self', false, false, true, true],
-			//['self', false, true, false, false],	// not fails, but corrupts class (even for public and private)
-			//['self', false, true, true, true],	// runkit restore fail (segfault for public)
+			//['self', false, true, false, false],
+			//['self', false, true, true, true],
 			['self', true, false, false, true],
 			['self', true, false, true, false],
-			//['self', true, true, false, false],	// ok
-			//['self', true, true, true, true],		// runkit restore fail (segfault for public and private)
+			['self', true, true, false, false],
+			['self', true, true, true, true],
 
 			['static', false, false, false, true],
 			['static', false, false, true, true],
-			//['static', false, true, false, true],	// runkit restore fail (segfault for public)
-			//['static', false, true, true, true],	// runkit restore fail (segfault for public)
+			//['static', false, true, false, true],
+			//['static', false, true, true, true],
 			['static', true, false, false, false],
 			['static', true, false, true, false],
-			//['static', true, true, false, true],	// runkit restore fail (segfault for public)
-			//['static', true, true, true, true],	// runkit restore fail (segfault for public and private)
+			['static', true, true, false, true],
+			['static', true, true, true, true],
 
 			['parent', false, false, true, true],
-			//['parent', false, true, true, false],	// ok
+			//['parent', false, true, true, false],
 			['parent', true, false, true, true],
-			//['parent', true, true, true, false],	// ok
-
-			// упомянутые сегфолты выпадают не сразу, а на одном из последующих моков (по крайней мере при следующем вызове через this)
-
-			// вывод: не стоит мокать отнаследованный метод, не зависимо от того, переопределён он или нет
-			// даже если это на самом деле не отнаследованный метод, а private с таким же названием
+			['parent', true, true, true, false],
 		];
 	}
 
@@ -287,7 +282,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 		$originalResult = $testObject->call($callChild, $isStatic, $isRedefined, $callType);
 
 		$mockResult = "mock " . $methodName . ' ' . $callType . ' ' . (int)$mockChild . ' ' . (int)$callChild;
-		$mock = new MethodMockerEntity('mockid', $mockClass, $methodName, false, function() use($mockResult) {return $mockResult;});
+		$mock = new MethodMockerEntity('mockid', $mockClass, $methodName, false, "return '$mockResult';");
 
 		if ($changedResult) {
 			$expectedResult = $mockResult;
@@ -327,12 +322,22 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 
 
 	/**
-	 * нельзя мокать отнаследованное
+	 * нельзя мокать отнаследованное через анонимные функции
 	 * @expectedException Exception
-	 * @expectedExceptionMessage cannot mock method staticFunc in child class
+	 * @expectedExceptionMessage can't mock inherited method _redefinedFunc as Closure
 	 */
-	public function testCallInherited() {
-		new MethodMockerEntity('mockid', MockTestChildFixture::class, 'staticFunc', false, function() {return 'sniff';});
+	public function testMockInheritedClosure() {
+		new MethodMockerEntity('mockid', MockTestChildFixture::class, '_redefinedFunc', false, function() {return 'mock';});
+	}
+
+
+	/**
+	 * нельзя мокать отнаследованное непереопределённое
+	 * @expectedException Exception
+	 * @expectedExceptionMessage method staticFunc is declared in parent class
+	 */
+	public function testMockInheritedNotRedeclared() {
+		new MethodMockerEntity('mockid', MockTestChildFixture::class, 'staticFunc', false, "return 123;");
 	}
 
 

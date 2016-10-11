@@ -65,7 +65,7 @@ class MethodMockerEntity
 	/**
 	 * Новое подменяемое событие
 	 *
-	 * @var callable|null
+	 * @var callable|string|null
 	 */
 	private $_action = null;
 
@@ -394,26 +394,17 @@ class MethodMockerEntity
 	 * @throws \Exception
 	 */
 	private function _mockOriginalMethod($flags) {
-		$mockKey = $this->_id;
+		$mockerClass = MethodMocker::class;
+		// можно было делать не через строки, а через функции
+		// но в таком случае ранкит глючит при наследовании
 		if ($this->_sniffMode) {
-			$isStatic = ($flags & self::METHOD_STATIC);
-			$methodName = $this->getOriginalMethodName();
-			$newMethodBody = function() use($methodName, $isStatic, $mockKey) {
-				if ($isStatic) {
-					$result = self::$methodName(...func_get_args());
-				} else {
-					$result = $this->$methodName(...func_get_args());
-				}
-				MethodMocker::doAction($mockKey, func_get_args(), $result);
-				return $result;
-			};
+			$origMethodCall = ($flags & self::METHOD_STATIC ? 'self::' : '$this->') . $this->getOriginalMethodName();
+			$mockAction = '$result = ' . $origMethodCall . '(...func_get_args()); ' . $mockerClass . "::doAction('" . $this->_id . "'" . ', func_get_args(), $result); return $result;';
 		} else {
 			if ($this->_action === null) {
-				$newMethodBody = function() use($mockKey) {
-					return MethodMocker::doAction($mockKey, func_get_args());
-				};
+				$mockAction = "return " . $mockerClass . "::doAction('" . $this->_id . "', func_get_args());";
 			} else {
-				$newMethodBody = $this->_action;
+				$mockAction = $this->_action;
 			}
 		}
 
@@ -423,10 +414,10 @@ class MethodMockerEntity
 			$this->getOriginalMethodName()
 		);
 
-		if (is_string($newMethodBody)) {
-			$success = runkit_method_add($this->_class, $this->_method, '', $newMethodBody, $flags);
+		if (is_string($mockAction)) {
+			$success = runkit_method_add($this->_class, $this->_method, '', $mockAction, $flags);
 		} else {
-			$success = runkit_method_add($this->_class, $this->_method, $newMethodBody, $flags);
+			$success = runkit_method_add($this->_class, $this->_method, $mockAction, $flags);
 		}
 		if (!$success) {
 			throw new \Exception($this->_getErrorMessage("can't mock method"));		// @codeCoverageIgnore
@@ -466,15 +457,23 @@ class MethodMockerEntity
 			throw new \Exception($this->_getErrorMessage('method "' . $this->_method . '" in class "' . $this->_class . '" does not exist!'));
 		}
 
-		$reflectClass = new \ReflectionClass($this->_class);
-		$reflectParent = $reflectClass->getParentClass();
-		if (empty($reflectParent)) {
-			return;
-		}
-		if ($reflectParent->hasMethod($this->_method)) {
+		$reflectionMethod = new ReflectionMethod($this->_class, $this->_method);
+		if ($reflectionMethod->getDeclaringClass()->getName() != $this->_class) {
+			// если замокать отнаследованный непереопределённый метод, то можно попортить класс
 			throw new \Exception($this->_getErrorMessage(
-				'cannot mock method ' . $this->_method . ' in child class ' . $this->_class . ' because of runkit problems'
+				'method ' . $this->_method . ' is declared in parent class ' . $this->_class . ' mock parent instead'
 			));
+		}
+
+		if (!empty($this->_action) && ($this->_action instanceof \Closure)) {
+			$reflectClass = new \ReflectionClass($this->_class);
+			$reflectParent = $reflectClass->getParentClass();
+			if (!empty($reflectParent) && $reflectParent->hasMethod($this->_method)) {
+				// ранкит глючит, если мокать метод в дочернем классе через коллбек
+				throw new \Exception($this->_getErrorMessage(
+					"can't mock inherited method " . $this->_method . ' as Closure'
+				));
+			}
 		}
 	}
 }

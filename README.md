@@ -11,7 +11,7 @@
 
 # Подмена методов
 ```php
-MethodMockerEntity MethodMocker::mock(string $className, string $methodName, callable|null $newAction = null);
+MethodMockerEntity MethodMocker::mock(string $className, string $methodName, string|callable|null $newAction = null);
 ```
 `$newAction` необходим в случае полной подменой метода без каких-либо проверок. Полезно в случае переопределения каких-то методов вывода, например `_sendJsonResponse` в CakePHP2.
 
