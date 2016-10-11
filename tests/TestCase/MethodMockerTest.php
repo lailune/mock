@@ -43,8 +43,9 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$returnValue = 'mock action return';
 
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')
-			->willReturnAction(function ($argsReceived) use ($argsCalled, $returnValue, &$isCalled) {
+			->willReturnAction(function ($argsReceived, $recievedValue) use ($argsCalled, $returnValue, &$isCalled) {
 				self::assertEquals($argsCalled, $argsReceived);
+				self::assertNull($recievedValue);
 				$isCalled = true;
 				return $returnValue;
 			});
@@ -63,8 +64,9 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$returnValue = MockTestFixture::staticMethodArgs(...$argsCalled);
 
 		MethodMocker::sniff(MockTestFixture::class, 'staticMethodArgs',
-			function ($argsReceived) use ($argsCalled, $returnValue, &$isCalled) {
+			function ($argsReceived, $recievedValue) use ($argsCalled, $returnValue, &$isCalled) {
 				self::assertEquals($argsCalled, $argsReceived);
+				self::assertEquals($returnValue, $recievedValue);
 				$isCalled = true;
 				return 'sniff not return';
 			}
