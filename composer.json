@@ -1,0 +1,22 @@
+{
+    "name": "artskills/mock",
+    "description": "Mocker based on runkit + reflection",
+    "type": "library",
+    "require": {
+        "php": "^5.6",
+        "ext-runkit": "^1.0.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "ArtSkills\\Mock\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ArtSkills\\Test\\": "tests"
+        }
+    }
+}
