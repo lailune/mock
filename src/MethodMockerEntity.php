@@ -461,7 +461,7 @@ class MethodMockerEntity
 		if ($reflectionMethod->getDeclaringClass()->getName() != $this->_class) {
 			// если замокать отнаследованный непереопределённый метод, то можно попортить класс
 			throw new \Exception($this->_getErrorMessage(
-				'method ' . $this->_method . ' is declared in parent class ' . $this->_class . ' mock parent instead'
+				'method ' . $this->_method . ' is declared in parent class ' . $reflectionMethod->getDeclaringClass()->getName() . ', mock parent instead!'
 			));
 		}
 
