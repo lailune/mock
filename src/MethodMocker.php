@@ -104,14 +104,25 @@ class MethodMocker
 	 * Возвращаем все подмененные методы
 	 *
 	 * @param bool $hasFailed был ли тест завален
+	 * @throws \Exception
 	 */
 	public static function restore($hasFailed = false) {
+		$firstError = null;
 		/** @var MethodMockerEntity $mock */
 		foreach (self::$_mockList as $mock) {
-			$mock->restore($hasFailed);
+			try {
+				$mock->restore($hasFailed);
+			} catch (\Exception $e) {
+				if (empty($firstError)) {
+					$firstError = $e;
+				}
+			}
 		}
 
 		self::$_mockList = [];
+		if (!empty($firstError)) {
+			throw $firstError;
+		}
 	}
 
 	/**

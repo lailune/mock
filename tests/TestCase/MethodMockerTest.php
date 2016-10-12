@@ -272,6 +272,23 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		self::assertTrue(true); // всё хорошо, не было ексепшнов
 	}
 
+	/**
+	 * проверка, что рестор всегда восстанавливает полностью
+	 */
+	public function testFullRestore() {
+		$mock1 = MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs');
+		$mock2 = MethodMocker::mock(MockTestFixture::class, 'staticFunc')->expectCall(2);
+		MockTestFixture::staticFunc();
+		try {
+			MethodMocker::restore();
+			self::fail('должен был выкинуться ексепшн');
+		} catch (\Exception $e) {
+			$this->assertStringEndsWith(' - is not called!', $e->getMessage());
+		}
+		self::assertTrue($mock1->isRestored());
+		self::assertTrue($mock2->isRestored());
+	}
+
 }
 
 

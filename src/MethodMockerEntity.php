@@ -382,6 +382,14 @@ class MethodMockerEntity
 	}
 
 	/**
+	 * восстановлен ли мок
+	 * @return bool
+	 */
+	public function isRestored() {
+		return $this->_mockRestored;
+	}
+
+	/**
 	 * Проверяем аргументы
 	 *
 	 * @param array $realArgs
