@@ -83,4 +83,20 @@ class MockTestChildFixture extends MockTestFixture
 		return self::_childOnlyFunc();
 	}
 
+	/**
+	 * Функция с типизированными и обязательными параметрами и передачей по ссылке
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @param MockTestFixture $typedParam
+	 * @param mixed $byRefParam
+	 * @param array $arrayParam
+	 * @param mixed $requiredParam
+	 * @param array $mayBeNotArray
+	 */
+	public static function complexParams(
+		MockTestFixture $typedParam, &$byRefParam, array $arrayParam, $requiredParam, $mayBeNotArray = []
+	) {
+		// noop
+	}
+
 }

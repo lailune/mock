@@ -8,11 +8,6 @@ use \ReflectionMethod;
  */
 class MethodMockerEntity
 {
-	const METHOD_PUBLIC = 256; // public
-	const METHOD_PROTECTED = 512; // protected
-	const METHOD_PRIVATE = 1024; // private
-	const METHOD_STATIC = 1; // static
-
 	const RENAME_PREFIX = '___rk_'; // префикс при переименовании метода
 
 	/**
@@ -54,13 +49,6 @@ class MethodMockerEntity
 	 * @var string
 	 */
 	private $_method = '';
-
-	/**
-	 * Тип мокаемого метода, логическое ИЛИ METHOD_PUBLIC, METHOD_PROTECTED, METHOD_PRIVATE, METHOD_STATIC
-	 *
-	 * @var int
-	 */
-	private $_type = self::METHOD_PUBLIC;
 
 	/**
 	 * Новое подменяемое событие
@@ -154,37 +142,62 @@ class MethodMockerEntity
 		if (!empty($newAction) && $sniffMode) {
 			throw new \Exception('Sniff mode does not support full mock');
 		}
-		$this->_init();
+		$this->_checkCanMock();
+		$this->_mockOriginalMethod();
 	}
 
 	/**
-	 * Инициализация
-	 *
-	 * @throws \Exception
+	 * Флаги, с которыми будет переопределять ранкит
+	 * @return int
 	 */
-	private function _init() {
-		$this->_checkCanMock();
-
+	private function _getRunkitFlags() {
 		$flags = 0;
 		$reflectionMethod = new ReflectionMethod($this->_class, $this->_method);
 		if ($reflectionMethod->isPublic()) {
 			$flags |= RUNKIT_ACC_PUBLIC;
-			$this->_type |= self::METHOD_PUBLIC;
 		}
 		if ($reflectionMethod->isProtected()) {
 			$flags |= RUNKIT_ACC_PROTECTED;
-			$this->_type |= self::METHOD_PROTECTED;
 		}
 		if ($reflectionMethod->isPrivate()) {
 			$flags |= RUNKIT_ACC_PRIVATE;
-			$this->_type |= self::METHOD_PRIVATE;
 		}
 		if ($reflectionMethod->isStatic()) {
 			$flags |= RUNKIT_ACC_STATIC;
-			$this->_type |= self::METHOD_STATIC;
 		}
+		return $flags;
+	}
 
-		$this->_mockOriginalMethod($flags);
+	/**
+	 * Список параметров, чтоб переопределение работало правильно
+	 * @return string
+	 * @throws \Exception
+	 */
+	private function _getMethodParameters() {
+		$reflectionMethod = new ReflectionMethod($this->_class, $this->_method);
+		$arguments = [];
+		$parameters = (array)$reflectionMethod->getParameters();
+		/** @var \ReflectionParameter $parameter */
+		foreach ($parameters as $parameter) {
+			$paramDeclaration = '$' . $parameter->getName();
+			if ($parameter->isPassedByReference()) {
+				$paramDeclaration = '&' . $paramDeclaration;
+			}
+			if ($parameter->isVariadic()) {
+				$paramDeclaration = '...' . $paramDeclaration;
+			} elseif ($parameter->isOptional()) {
+				$defaultValue = $parameter->getDefaultValue();
+				$paramDeclaration .= ' = ' . var_export($defaultValue, true);
+			}
+			$paramClass = $parameter->getClass();
+			if (!empty($paramClass)) {
+				$paramDeclaration = $paramClass->getName() . ' ' . $paramDeclaration;
+			} elseif ($parameter->isArray()) {
+				$paramDeclaration = 'array' . ' ' . $paramDeclaration;
+			}
+			$arguments[$parameter->getPosition()] = $paramDeclaration;
+		}
+		return implode(', ', $arguments);
 	}
 
 	/**
@@ -390,15 +403,15 @@ class MethodMockerEntity
 	/**
 	 * Мокаем оригинальный метод
 	 *
-	 * @param int $flags
 	 * @throws \Exception
 	 */
-	private function _mockOriginalMethod($flags) {
+	private function _mockOriginalMethod() {
+		$flags = $this->_getRunkitFlags();
 		$mockerClass = MethodMocker::class;
 		// можно было делать не через строки, а через функции
 		// но в таком случае ранкит глючит при наследовании
 		if ($this->_sniffMode) {
-			$origMethodCall = ($flags & self::METHOD_STATIC ? 'self::' : '$this->') . $this->getOriginalMethodName();
+			$origMethodCall = ($flags & RUNKIT_ACC_STATIC ? 'self::' : '$this->') . $this->getOriginalMethodName();
 			$mockAction = '$result = ' . $origMethodCall . '(...func_get_args()); ' . $mockerClass . "::doAction('" . $this->_id . "'" . ', func_get_args(), $result); return $result;';
 		} else {
 			if ($this->_action === null) {
@@ -408,6 +421,7 @@ class MethodMockerEntity
 			}
 		}
 
+		$parameters = $this->_getMethodParameters();
 		runkit_method_rename(
 			$this->_class,
 			$this->_method,
@@ -415,7 +429,7 @@ class MethodMockerEntity
 		);
 
 		if (is_string($mockAction)) {
-			$success = runkit_method_add($this->_class, $this->_method, '', $mockAction, $flags);
+			$success = runkit_method_add($this->_class, $this->_method, $parameters, $mockAction, $flags);
 		} else {
 			$success = runkit_method_add($this->_class, $this->_method, $mockAction, $flags);
 		}

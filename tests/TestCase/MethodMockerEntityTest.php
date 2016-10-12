@@ -340,5 +340,47 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 		new MethodMockerEntity('mockid', MockTestChildFixture::class, 'staticFunc', false, "return 123;");
 	}
 
+	/**
+	 * При переопределении метода его прототип должен оставаться тем же,
+	 * чтобы не было конфликта с наследниками
+	 * Должны сохраняться: класс/array, передача по ссылке и количество обязательных параметров
+	 * @SuppressWarnings(PHPMD.UnusedLocalVariable) переменная нужна, чтоб объект сразу же не уничтожился
+	 */
+	public function testStrictParams() {
+		$mock = new MethodMockerEntity('mockid', MockTestFixture::class, 'complexParams', false, "return 123;");
+		MockTestChildFixture::staticFunc();
+		self::assertTrue(true); // всё хорошо, скрипт не упал
+	}
+
+
+	/**
+	 * тест того, что дефолтные значения сохраняются
+	 * @SuppressWarnings(PHPMD.UnusedLocalVariable) переменная нужна, чтоб объект сразу же не уничтожился
+	 */
+	public function testDefaultValues() {
+		$mock = new MethodMockerEntity('mockid', MockTestFixture::class, 'defaultValues', false, 'return get_defined_vars();');
+		$expectedResult = [
+			'arrayParam' => ['a' => [null]],
+			'floatParam' => 2.5,
+			'stringParam' => 'asd',
+			'boolParam' => true,
+			'nullParam' => null,
+		];
+		$result = MockTestFixture::defaultValues();
+		self::assertEquals($expectedResult, $result);
+	}
+
+	/**
+	 * variadic параметры тоже должны правильно обрабатываться
+	 * без ... будет ошибка
+	 * @SuppressWarnings(PHPMD.UnusedLocalVariable) переменная нужна, чтоб объект сразу же не уничтожился
+	 */
+	public function testVariadicParam() {
+		$mock = new MethodMockerEntity('mockid', MockTestFixture::class, 'variadicParam', false, 'return get_defined_vars();');
+		self::assertEquals(['variadicParam' => []], MockTestFixture::variadicParam());
+		self::assertEquals(['variadicParam' => [1]], MockTestFixture::variadicParam(1));
+		self::assertEquals(['variadicParam' => [1, 2]], MockTestFixture::variadicParam(1, 2));
+	}
+
 
 }

@@ -217,4 +217,53 @@ class MockTestFixture
 		$methodName .= 'Func';
 		return $methodName;
 	}
+
+	/**
+	 * Функция с типизированными и обязательными параметрами и передачей по ссылке
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @param MockTestFixture $typedParam
+	 * @param mixed $byRefParam
+	 * @param array $arrayParam
+	 * @param mixed $requiredParam
+	 * @param array $mayBeNotArray
+	 */
+	public static function complexParams(
+		MockTestFixture $typedParam, &$byRefParam, array $arrayParam, $requiredParam, $mayBeNotArray = []
+	) {
+		// noop
+	}
+
+
+	/**
+	 * Функция с дефолтными значениями
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @param array $arrayParam
+	 * @param float $floatParam
+	 * @param string $stringParam
+	 * @param bool $boolParam
+	 * @param null $nullParam
+	 * @return array
+	 */
+	public static function defaultValues(
+		$arrayParam = ['a' => [null]], $floatParam = 2.5, $stringParam = 'asd', $boolParam = true, $nullParam = null
+	) {
+		return [];
+	}
+
+	/**
+	 * Функция с вариадиком
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @param array ...$variadicParam
+	 * @return array
+	 */
+	public static function variadicParam(...$variadicParam) {
+		return [];
+	}
+
+
+
+
+
 }
