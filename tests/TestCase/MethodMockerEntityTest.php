@@ -255,8 +255,6 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * тесты моков с наследованием
-	 * уже не имеет смысл, все интересные тесты отключены из-за проблем с ранкитом
-	 * можно использовать для проверки ранкита, включив интересные тесты
 	 *
 	 * @dataProvider mockInheritedProvider
 	 *

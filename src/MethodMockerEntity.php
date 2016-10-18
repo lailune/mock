@@ -238,21 +238,21 @@ class MethodMockerEntity
 	 * на аргументы не проводится.
 	 * Если нужно явно задать отсутствие аргументов, то задается один параметр false: ->expected(false)
 	 *
+	 * @param array ...$params
 	 * @return $this
 	 * @throws \Exception
 	 */
-	public function expectArgs() {
+	public function expectArgs(...$params) {
 		$this->_checkNotRestored();
 
 		if (!func_num_args()) {
 			throw new \Exception($this->_getErrorMessage('method expectArgs() requires at least one arg!'));
 		}
 
-		$args = func_get_args();
-		if (count($args) === 1 && $args[0] === false) {
+		if (count($params) === 1 && $params[0] === false) {
 			$this->_expectedArgs = false;
 		} else {
-			$this->_expectedArgs = $args;
+			$this->_expectedArgs = $params;
 		}
 
 
