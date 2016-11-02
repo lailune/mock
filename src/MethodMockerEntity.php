@@ -114,6 +114,13 @@ class MethodMockerEntity
 	private $_sniffMode = false;
 
 	/**
+	 * Дополнительная переменная, которую можно использовать в _returnAction
+	 *
+	 * @var mixed
+	 */
+	private $_additionalVar = null;
+
+	/**
 	 * MethodMockerEntity constructor.
 	 * Не рекомендуется создавать непосредственно, лучше через MethodMocker
 	 * При непосредственном создании доступна только полная подмена
@@ -260,6 +267,23 @@ class MethodMockerEntity
 	}
 
 	/**
+	 * Задает дополнительную переменную.
+	 * В случае, когда дополнительная переменная - массив, мержит его с переданным (НЕРЕКУРСИВНО), кроме случая, когда $overwrite == true
+	 *
+	 * @param mixed $var Новое значение дополнительной переменной
+	 * @param bool $overwrite Перезаписать $var? (Нужно, только если доп. пер-я - массив)
+	 * @return $this
+	 */
+	public function setAdditionalVar($var, $overwrite = false) {
+		if (!is_array($var) || !is_array($this->_additionalVar) || $overwrite) {
+			$this->_additionalVar = $var;
+		} else {
+			$this->_additionalVar = $var + $this->_additionalVar;
+		}
+		return $this;
+	}
+
+	/**
 	 * Что вернет подменённая функция
 	 *
 	 * @param mixed $value
@@ -322,7 +346,11 @@ class MethodMockerEntity
 			return $this->_returnValue;
 		} elseif ($this->_returnAction !== null) {
 			$action = $this->_returnAction;
-			return $action($args, $origMethodResult);
+			if ($this->_sniffMode) {
+				return $action($args, $origMethodResult, $this->_additionalVar);
+			} else {
+				return $action($args, $this->_additionalVar);
+			}
 		} else {
 			return null;
 		}

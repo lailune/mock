@@ -43,9 +43,9 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$returnValue = 'mock action return';
 
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')
-			->willReturnAction(function ($argsReceived, $recievedValue) use ($argsCalled, $returnValue, &$isCalled) {
+			->willReturnAction(function ($argsReceived, $additionalVar) use ($argsCalled, $returnValue, &$isCalled) {
 				self::assertEquals($argsCalled, $argsReceived);
-				self::assertNull($recievedValue);
+				self::assertNull($additionalVar);
 				$isCalled = true;
 				return $returnValue;
 			});
@@ -64,9 +64,10 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$returnValue = MockTestFixture::staticMethodArgs(...$argsCalled);
 
 		MethodMocker::sniff(MockTestFixture::class, 'staticMethodArgs',
-			function ($argsReceived, $recievedValue) use ($argsCalled, $returnValue, &$isCalled) {
+			function ($argsReceived, $recievedValue, $additionalVar) use ($argsCalled, $returnValue, &$isCalled) {
 				self::assertEquals($argsCalled, $argsReceived);
 				self::assertEquals($returnValue, $recievedValue);
+				self::assertNull($additionalVar);
 				$isCalled = true;
 				return 'sniff not return';
 			}
@@ -289,6 +290,86 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		self::assertTrue($mock2->isRestored());
 	}
 
+	/**
+	 * Тестирует добавление дополнительной переменной
+	 */
+	public function testAdditionalVar()	{
+		$someVar = 5;
+		$arr1 = ['str' => 'aza', 'int' => 234, 'arr' => ['val1' => true, 'val2' => null]];
+		$arr2 = ['str' => 'sas', 'arr' => ['val1' => false,]];
+		$arr3 = [1, 2, 3];
+
+		// Обычная переменная
+		$mock = MethodMocker::mock(MockTestFixture::class, 'staticFunc')
+			->setAdditionalVar($someVar)
+			->willReturnAction(function ($params, $var) use ($someVar) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals($someVar, $var, 'Не записалась обычная (не массив) переменная');
+			});
+		MockTestFixture::staticFunc();
+
+		// Массив перезаписался
+		$mock->setAdditionalVar($arr1)
+			->willReturnAction(function ($params, $var) use ($arr1) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals($arr1, $var, 'Не записался  массив');
+			});
+		MockTestFixture::staticFunc();
+
+		// Массив дополнился
+		$mock->setAdditionalVar($arr2)
+			->setAdditionalVar($arr3)
+			->willReturnAction(function ($params, $var) use ($arr2) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals(['str' => 'sas', 'int' => 234, 'arr' => ['val1' => false,], 1, 2, 3], $var,
+					'Некорректно объединились массивы');
+			});
+		MockTestFixture::staticFunc();
+
+		// Массив дополнился
+		$mock->setAdditionalVar($arr2)
+			->setAdditionalVar($arr3)
+			->willReturnAction(function ($params, $var) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals(['str' => 'sas', 'int' => 234, 'arr' => ['val1' => false,], 1, 2, 3], $var,
+					'Некорректно объединились массивы');
+			});
+		MockTestFixture::staticFunc();
+
+		// Массив перезаписан
+		$mock->setAdditionalVar($arr3, true)
+			->willReturnAction(function ($params, $var) use ($arr3) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals($arr3, $var, 'Не перезаписался массив');
+			});
+		MockTestFixture::staticFunc();
+
+		// Обнулен
+		$mock->setAdditionalVar(null)
+			->willReturnAction(function ($params, $var) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals(null, $var, 'Не перезаписался массив');
+			});
+		MockTestFixture::staticFunc();
+
+		self::assertEquals(6, $mock->getCallCount(), 'Что-то не проверилось');
+	}
+
+	/**
+	 * Проверяет, что доп переменная также работает и в сниффе
+	 */
+	public function testAdditionalVarSniff() {
+		$someVar = 5;
+		$sniff = MethodMocker::sniff(MockTestFixture::class, 'staticFunc')
+			->setAdditionalVar($someVar)
+			->willReturnAction(function ($params, $originalResult, $var) use ($someVar) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals('original public static', $originalResult, 'Неожиданные результат оригинальной функции');
+				self::assertEquals($someVar, $var, 'Не записалась переменная');
+			});
+		MockTestFixture::staticFunc();
+		self::assertEquals(1, $sniff->getCallCount(), 'Функция не вызвалась');
+	}
 }
 
 
