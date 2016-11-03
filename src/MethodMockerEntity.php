@@ -268,18 +268,13 @@ class MethodMockerEntity
 
 	/**
 	 * Задает дополнительную переменную.
-	 * В случае, когда дополнительная переменная - массив, мержит его с переданным (НЕРЕКУРСИВНО), кроме случая, когда $overwrite == true
 	 *
 	 * @param mixed $var Новое значение дополнительной переменной
-	 * @param bool $overwrite Перезаписать $var? (Нужно, только если доп. пер-я - массив)
 	 * @return $this
 	 */
-	public function setAdditionalVar($var, $overwrite = false) {
-		if (!is_array($var) || !is_array($this->_additionalVar) || $overwrite) {
-			$this->_additionalVar = $var;
-		} else {
-			$this->_additionalVar = $var + $this->_additionalVar;
-		}
+	public function setAdditionalVar($var) {
+		$this->_checkNotRestored();
+		$this->_additionalVar = $var;
 		return $this;
 	}
 
