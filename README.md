@@ -21,6 +21,7 @@ MethodMockerEntity MethodMocker::mock(string $className, string $methodName, str
     * `anyCall()` - как минимум 1 раз (по-умолчанию)
     * `expectCall(int <кол-во>)` - если мы специально хотим указать, что вызовов быть не должно, то `$mock->expectCall(0);`
 * Проверка входных параметров - `expectArgs(mixed <аргумент1>, mixed <аргумент2>, ..)`
+* Добавление переменной для `willReturnAction` - `setAdditionalVar(mixed <переменная>)`
 * Возвращаемое значение
     * `willReturnValue(mixed <значние>)`
     * `willReturnAction(function($args) { /* код проверки */;  return 'mock result';})` будет вызвана функция, результат которой вернется в качестве ответа мока
@@ -39,6 +40,26 @@ MethodMocker::mock('App\Lib\File', 'zip')->singleCall()
 MethodMocker::mock(Promo::class, '_getShippedOrdersCount')->willReturnAction(function ($args) {
     return $this->_currentOrderCount;
 });
+```
+Мок с кэлбэком и доп. переменной:
+```php
+$mock = MethodMocker::mock(Auth::class, 'user')
+    ->setAdditionalVar(['utm' => 'test', 'id' => 123])
+    ->willReturnAction(function ($args, $additionalVar) {
+        if (isset($args[0]) { 
+            return $additionalVar[$args[0]]; 
+        } else {
+            return $additionalVar;
+        }
+    });
+    
+Auth::user(); // [...]
+Auth::user('utm'); // 'test'
+    
+$mock->setAdditionalVar(['utm' => 'shop', 'id' => 100]);
+    
+Auth::user(); // [...]
+Auth::user('utm'); // 'shop'
 ```
 
 # Сниф методов

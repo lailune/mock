@@ -114,6 +114,13 @@ class MethodMockerEntity
 	private $_sniffMode = false;
 
 	/**
+	 * Дополнительная переменная, которую можно использовать в _returnAction
+	 *
+	 * @var mixed
+	 */
+	private $_additionalVar = null;
+
+	/**
 	 * MethodMockerEntity constructor.
 	 * Не рекомендуется создавать непосредственно, лучше через MethodMocker
 	 * При непосредственном создании доступна только полная подмена
@@ -260,6 +267,18 @@ class MethodMockerEntity
 	}
 
 	/**
+	 * Задает дополнительную переменную.
+	 *
+	 * @param mixed $var Новое значение дополнительной переменной
+	 * @return $this
+	 */
+	public function setAdditionalVar($var) {
+		$this->_checkNotRestored();
+		$this->_additionalVar = $var;
+		return $this;
+	}
+
+	/**
 	 * Что вернет подменённая функция
 	 *
 	 * @param mixed $value
@@ -322,7 +341,11 @@ class MethodMockerEntity
 			return $this->_returnValue;
 		} elseif ($this->_returnAction !== null) {
 			$action = $this->_returnAction;
-			return $action($args, $origMethodResult);
+			if ($this->_sniffMode) {
+				return $action($args, $origMethodResult, $this->_additionalVar);
+			} else {
+				return $action($args, $this->_additionalVar);
+			}
 		} else {
 			return null;
 		}

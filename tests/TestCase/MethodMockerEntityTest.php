@@ -74,7 +74,9 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 		}
 		$originalResult = $this->_callFixtureMethod($instance, $isPrivate, $isProtected);
 		$mockResult = "mock " . $methodName;
-		$mock = new MethodMockerEntity('mockid', MockTestFixture::class, $methodName, false, function() use($mockResult) {return $mockResult;});
+		$mock = new MethodMockerEntity('mockid', MockTestFixture::class, $methodName, false, function () use ($mockResult) {
+			return $mockResult;
+		});
 		$this->assertEquals($mockResult, $this->_callFixtureMethod($instance, $isPrivate, $isProtected));
 		unset($mock);
 
@@ -175,6 +177,16 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	}
 
 	/**
+	 * Мок вернули, а ему задают доп. перем-ю
+	 *
+	 * @expectedException Exception
+	 * @expectedExceptionMessage  mock entity is restored!
+	 */
+	public function testRestoredSetAdditionalVar() {
+		$this->_getRestoredMock()->setAdditionalVar(123);
+	}
+
+	/**
 	 * Мок для тестов
 	 * @return MethodMockerEntity
 	 */
@@ -202,8 +214,6 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 		$mock = $this->_getMock()->expectCall(0);
 		$mock->expectArgs();
 	}
-
-
 
 
 	/**
@@ -258,11 +268,11 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	 *
 	 * @dataProvider mockInheritedProvider
 	 *
-	 * @param string $callType		тип вызова
-	 * @param bool $isRedefined		метод переопределён?
-	 * @param bool $mockChild		замокать класс-наследник? (или родитель)
-	 * @param bool $callChild		вызываемый метод определён в наследнике? (или в родителе)
-	 * @param bool $changedResult	результат - замокан? (или вернётся исходный)
+	 * @param string $callType тип вызова
+	 * @param bool $isRedefined метод переопределён?
+	 * @param bool $mockChild замокать класс-наследник? (или родитель)
+	 * @param bool $callChild вызываемый метод определён в наследнике? (или в родителе)
+	 * @param bool $changedResult результат - замокан? (или вернётся исходный)
 	 */
 	public function testInheritedMocks($callType, $isRedefined, $mockChild, $callChild, $changedResult) {
 		if (!$callChild && ($callType == 'parent')) {
@@ -315,7 +325,9 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	 * @expectedExceptionMessage Sniff mode does not support full mock
 	 */
 	public function testSniff() {
-		new MethodMockerEntity('mockid', MockTestFixture::class, 'staticFunc', true, function() {return 'sniff';});
+		new MethodMockerEntity('mockid', MockTestFixture::class, 'staticFunc', true, function () {
+			return 'sniff';
+		});
 	}
 
 
@@ -325,7 +337,9 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	 * @expectedExceptionMessage can't mock inherited method _redefinedFunc as Closure
 	 */
 	public function testMockInheritedClosure() {
-		new MethodMockerEntity('mockid', MockTestChildFixture::class, '_redefinedFunc', false, function() {return 'mock';});
+		new MethodMockerEntity('mockid', MockTestChildFixture::class, '_redefinedFunc', false, function () {
+			return 'mock';
+		});
 	}
 
 

@@ -43,9 +43,9 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$returnValue = 'mock action return';
 
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')
-			->willReturnAction(function ($argsReceived, $recievedValue) use ($argsCalled, $returnValue, &$isCalled) {
+			->willReturnAction(function ($argsReceived, $additionalVar) use ($argsCalled, $returnValue, &$isCalled) {
 				self::assertEquals($argsCalled, $argsReceived);
-				self::assertNull($recievedValue);
+				self::assertNull($additionalVar);
 				$isCalled = true;
 				return $returnValue;
 			});
@@ -64,9 +64,10 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$returnValue = MockTestFixture::staticMethodArgs(...$argsCalled);
 
 		MethodMocker::sniff(MockTestFixture::class, 'staticMethodArgs',
-			function ($argsReceived, $recievedValue) use ($argsCalled, $returnValue, &$isCalled) {
+			function ($argsReceived, $recievedValue, $additionalVar) use ($argsCalled, $returnValue, &$isCalled) {
 				self::assertEquals($argsCalled, $argsReceived);
 				self::assertEquals($returnValue, $recievedValue);
+				self::assertNull($additionalVar);
 				$isCalled = true;
 				return 'sniff not return';
 			}
@@ -289,6 +290,37 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		self::assertTrue($mock2->isRestored());
 	}
 
+	/**
+	 * Тестирует добавление дополнительной переменной
+	 */
+	public function testAdditionalVar() {
+		$someVar = 5;
+		$mock = MethodMocker::mock(MockTestFixture::class, 'staticFunc')
+			->setAdditionalVar($someVar)
+			->willReturnAction(function ($params, $var) use ($someVar) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals($someVar, $var, 'Не записалась обычная (не массив) переменная');
+			});
+		MockTestFixture::staticFunc();
+
+		self::assertEquals(1, $mock->getCallCount(), 'Функция не вызвалась');
+	}
+
+	/**
+	 * Проверяет, что доп переменная также работает и в сниффе
+	 */
+	public function testAdditionalVarSniff() {
+		$someVar = 5;
+		$sniff = MethodMocker::sniff(MockTestFixture::class, 'staticFunc')
+			->setAdditionalVar($someVar)
+			->willReturnAction(function ($params, $originalResult, $var) use ($someVar) {
+				self::assertEquals([], $params, 'Неожиданные параметры');
+				self::assertEquals('original public static', $originalResult, 'Неожиданные результат оригинальной функции');
+				self::assertEquals($someVar, $var, 'Не записалась переменная');
+			});
+		MockTestFixture::staticFunc();
+		self::assertEquals(1, $sniff->getCallCount(), 'Функция не вызвалась');
+	}
 }
 
 
