@@ -26,6 +26,8 @@ MethodMockerEntity MethodMocker::mock(string $className, string $methodName, str
     * `willReturnValue(mixed <значние>)`
     * `willReturnAction(function($args) { /* код проверки */;  return 'mock result';})` будет вызвана функция, результат которой вернется в качестве ответа мока
     * `null` по-умолчанию
+    * `willThrowException(string $message, string $class = null)`
+    * `willReturnValueList(array $valueList)` - для случаев, когда один вызов тестируемого метода делает более одного вызова замоканного метода
 * Кол-во вызовов подменённого метода - `getCallCount()`
 
 ## Примеры

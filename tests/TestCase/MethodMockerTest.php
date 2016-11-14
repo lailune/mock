@@ -321,6 +321,149 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		MockTestFixture::staticFunc();
 		self::assertEquals(1, $sniff->getCallCount(), 'Функция не вызвалась');
 	}
+
+
+	/**
+	 * Тест мока с ексепшном
+	 *
+	 * @expectedException \InvalidArgumentException
+	 * @expectedExceptionMessage  test message
+	 */
+	public function testExpectException() {
+		MethodMocker::mock(MockTestFixture::class, 'staticFunc')->willThrowException('test message', \InvalidArgumentException::class);
+		MockTestFixture::staticFunc();
+	}
+
+	/**
+	 * Тест мока с ексепшном
+	 *
+	 * @expectedException \Exception
+	 * @expectedExceptionMessage  test message default
+	 */
+	public function testExpectExceptionDefault() {
+		MethodMocker::mock(MockTestFixture::class, 'staticFunc')->willThrowException('test message default');
+		MockTestFixture::staticFunc();
+	}
+
+	/**
+	 * тест мока со списком значений
+	 */
+	public function testReturnList() {
+		$returnList = [
+			'asd',
+			'qwe',
+			234,
+			true,
+			null,
+			[[[['cvb']]]]
+		];
+		MethodMocker::mock(MockTestFixture::class, 'staticFunc')->willReturnValueList($returnList);
+		$returned = [
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+		];
+		self::assertEquals($returnList, $returned, 'Неправильно работает willReturnValueList');
+	}
+
+	/**
+	 * Вызовов больше, чем значений в списке
+	 *
+	 * @expectedException \Exception
+	 * @expectedExceptionMessage return value list ended
+	 */
+	public function testReturnListMore() {
+		MethodMocker::mock(MockTestFixture::class, 'staticFunc')->willReturnValueList([1]);
+		MockTestFixture::staticFunc();
+		MockTestFixture::staticFunc();
+	}
+
+
+	/**
+	 * переопределение expectArgs и willReturn
+	 */
+	public function testRedefine() {
+		$mock = MethodMocker::mock(MockTestFixture::class, 'staticFunc');
+
+		$returnValue = 'val1';
+		$expectArgs = 'arg1';
+		$mock->expectArgs($expectArgs)->willReturnValue($returnValue);
+		self::assertEquals($returnValue, MockTestFixture::staticFunc($expectArgs));
+
+		$returnValue = 'val2';
+		$expectArgs = 'arg2';
+		$mock->expectArgs($expectArgs)->willReturnValue($returnValue);
+		self::assertEquals($returnValue, MockTestFixture::staticFunc($expectArgs));
+
+		$returnList = ['list1', 'list2'];
+		$mock->expectArgs(false)->willReturnValueList($returnList);
+		$returned = [
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+		];
+		self::assertEquals($returnList, $returned);
+
+		$returnList = ['list2', 'list3'];
+		$mock->willReturnValueList($returnList);
+		$returned = [
+			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(),
+		];
+		self::assertEquals($returnList, $returned);
+
+		$message = 'msg1';
+		$mock->willThrowException($message);
+		try {
+			MockTestFixture::staticFunc();
+			self::fail();
+		} catch (\Exception $e) {
+			self::assertInstanceOf(\Exception::class, $e);
+			self::assertEquals($message, $e->getMessage());
+		}
+
+		$message = 'msg2';
+		$class = \InvalidArgumentException::class;
+		$mock->willThrowException($message, $class);
+		try {
+			MockTestFixture::staticFunc();
+			self::fail();
+		} catch (\Exception $e) {
+			self::assertInstanceOf($class, $e);
+			self::assertEquals($message, $e->getMessage());
+		}
+
+		$returnActionValue = 'action';
+		$mock->willReturnAction(function() use($returnActionValue) {
+			return $returnActionValue;
+		});
+		self::assertEquals($returnActionValue, MockTestFixture::staticFunc());
+
+		$returnValue = 'val3';
+		$mock->willReturnValue($returnValue);
+		self::assertEquals($returnValue, MockTestFixture::staticFunc());
+	}
+
+	/**
+	 * переопределение expectArgs, срабатывание проверки
+	 *
+	 * @expectedException \Exception
+	 * @expectedExceptionMessage , but real args:
+	 */
+	public function testRedefineFail() {
+		$mock = MethodMocker::mock(MockTestFixture::class, 'staticFunc');
+
+		$expectArgs = 'arg1';
+		$mock->expectArgs($expectArgs);
+		MockTestFixture::staticFunc($expectArgs);
+
+		$expectArgs = 'arg2';
+		$mock->expectArgs($expectArgs);
+		MockTestFixture::staticFunc();
+	}
+
 }
 
 
