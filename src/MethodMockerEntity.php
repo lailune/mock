@@ -121,6 +121,23 @@ class MethodMockerEntity
 	private $_additionalVar = null;
 
 	/**
+	 * Кидаемый ексепшн
+	 *
+	 * @var array {
+	 * 		@var string $message
+	 * 		@var string $class
+	 * }
+	 */
+	private $_exceptionConf = null;
+
+	/**
+	 * Список возвращаемых значений
+	 *
+	 * @var null|array
+	 */
+	private $_returnValueList = null;
+
+	/**
 	 * MethodMockerEntity constructor.
 	 * Не рекомендуется создавать непосредственно, лучше через MethodMocker
 	 * При непосредственном создании доступна только полная подмена
@@ -279,6 +296,16 @@ class MethodMockerEntity
 	}
 
 	/**
+	 * Сброс возвращаемого действия
+	 */
+	private function _unsetReturn() {
+		$this->_returnAction = null;
+		$this->_returnValue = null;
+		$this->_exceptionConf = null;
+		$this->_returnValueList = null;
+	}
+
+	/**
 	 * Что вернет подменённая функция
 	 *
 	 * @param mixed $value
@@ -287,8 +314,7 @@ class MethodMockerEntity
 	 */
 	public function willReturnValue($value) {
 		$this->_checkNotRestored();
-
-		$this->_returnAction = null;
+		$this->_unsetReturn();
 		$this->_returnValue = $value;
 		return $this;
 	}
@@ -307,9 +333,39 @@ class MethodMockerEntity
 	 */
 	public function willReturnAction($action) {
 		$this->_checkNotRestored();
-
+		$this->_unsetReturn();
 		$this->_returnAction = $action;
-		$this->_returnValue = null;
+		return $this;
+	}
+
+	/**
+	 * Подменённая функция кинет ексепшн (по умолчанию - \Exception, можно задать класс вторым параметром)
+	 *
+	 * @param string $message
+	 * @param null|string $class
+	 * @return $this
+	 */
+	public function willThrowException($message, $class = null) {
+		$this->_checkNotRestored();
+		$this->_unsetReturn();
+		$this->_exceptionConf = [
+			'message' => $message,
+			'class' => (is_null($class) ? \Exception::class : $class),
+		];
+		return $this;
+	}
+
+	/**
+	 * Массив возвращаемых значений на несколько вызовов
+	 * (для случаев, когда один вызов тестируемого метода делает более одного вызова замоканного метода)
+	 *
+	 * @param array $valueList
+	 * @return $this
+	 */
+	public function willReturnValueList(array $valueList) {
+		$this->_checkNotRestored();
+		$this->_unsetReturn();
+		$this->_returnValueList = $valueList;
 		return $this;
 	}
 
@@ -346,6 +402,14 @@ class MethodMockerEntity
 			} else {
 				return $action($args, $this->_additionalVar);
 			}
+		} elseif ($this->_exceptionConf !== null) {
+			$exceptionClass = $this->_exceptionConf['class'];
+			throw new $exceptionClass($this->_exceptionConf['message']);
+		} elseif ($this->_returnValueList !== null) {
+			if (empty($this->_returnValueList)) {
+				throw new \Exception($this->_getErrorMessage('return value list ended'));
+			}
+			return array_shift($this->_returnValueList);
 		} else {
 			return null;
 		}

@@ -187,6 +187,28 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	}
 
 	/**
+	 * Мок вернули, а ему задают ексепшн
+	 *
+	 * @expectedException Exception
+	 * @expectedExceptionMessage  mock entity is restored!
+	 */
+	public function testRestoredSetException() {
+		$this->_getRestoredMock()->willThrowException('asd');
+	}
+
+	/**
+	 * Мок вернули, а ему задают возвращаемые значения
+	 *
+	 * @expectedException Exception
+	 * @expectedExceptionMessage  mock entity is restored!
+	 */
+	public function testRestoredReturnList() {
+		$this->_getRestoredMock()->setAdditionalVar(123);
+	}
+
+
+
+	/**
 	 * Мок для тестов
 	 * @return MethodMockerEntity
 	 */
