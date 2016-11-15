@@ -1,8 +1,6 @@
 <?php
 namespace ArtSkills\Mock;
 
-use \Exception;
-
 /**
  * Мокалка констант в классах
  */
@@ -21,7 +19,7 @@ class ConstantMocker
 	 * @param string|null $className
 	 * @param string $constantName
 	 * @param mixed $newValue
-	 * @throws Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	public static function mock($className, $constantName, $newValue) {
 		if (strlen($className)) {
@@ -31,15 +29,15 @@ class ConstantMocker
 		}
 		$origValue = @constant($fullName);
 		if ($origValue === null) {
-			throw new Exception('Constant ' . $fullName . ' is not defined!');
+			MethodMocker::fail('Constant ' . $fullName . ' is not defined!');
 		}
 		if (isset(self::$_constantList[$fullName])) {
-			throw new Exception('Constant ' . $fullName . ' is already mocked!');
+			MethodMocker::fail('Constant ' . $fullName . ' is already mocked!');
 		}
 
 		self::$_constantList[$fullName] = $origValue;
 		if (!runkit_constant_redefine($fullName, $newValue)) {
-			throw new Exception("Can't redefine constant $fullName!");	// @codeCoverageIgnore
+			MethodMocker::fail("Can't redefine constant $fullName!");	// @codeCoverageIgnore
 		}
 	}
 

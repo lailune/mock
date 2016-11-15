@@ -4,7 +4,6 @@ namespace ArtSkills\Test\TestCase;
 use ArtSkills\Mock\MethodMockerEntity;
 use ArtSkills\Test\Fixture\MockTestChildFixture;
 use ArtSkills\Test\Fixture\MockTestFixture;
-use \Exception;
 
 /**
  * @covers \ArtSkills\Mock\MethodMockerEntity
@@ -86,7 +85,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок на несуществующий класс
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  class "badClass" does not exist!
 	 */
 	public function testMockBadClass() {
@@ -96,11 +95,21 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок на несуществующий метод
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  method "badMethod" in class "ArtSkills\Test\Fixture\MockTestFixture" does not exist!
 	 */
 	public function testMockBadMethod() {
 		new MethodMockerEntity('mockid', MockTestFixture::class, 'badMethod');
+	}
+
+	/**
+	 * Мок с кривым экшном
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage action must be a string, a Closure or a null
+	 */
+	public function testMockBadAction() {
+		new MethodMockerEntity('mockid', MockTestFixture::class, 'staticFunc', false, 123);
 	}
 
 	/**
@@ -117,7 +126,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а его конфигурируют
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage   mock entity is restored!
 	 */
 	public function testRestoredExpectCall() {
@@ -127,7 +136,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а его конфигурируют
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage   mock entity is restored!
 	 */
 	public function testRestoredExpected() {
@@ -137,7 +146,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а его конфигурируют
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage   mock entity is restored!
 	 */
 	public function testRestoredWillReturnValue() {
@@ -147,7 +156,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а его конфигурируют
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage   mock entity is restored!
 	 */
 	public function testRestoredWillReturnAction() {
@@ -159,7 +168,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а его вызывают
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage   mock entity is restored!
 	 */
 	public function testRestoredDoAction() {
@@ -167,19 +176,19 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	}
 
 	/**
-	 * Метод без аргументов
+	 * Мок вернули, а его конфигурируют
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  mock entity is restored!
 	 */
 	public function testRestoredExpectArgs() {
-		$this->_getRestoredMock()->expectArgs();
+		$this->_getRestoredMock()->expectArgs(123);
 	}
 
 	/**
 	 * Мок вернули, а ему задают доп. перем-ю
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  mock entity is restored!
 	 */
 	public function testRestoredSetAdditionalVar() {
@@ -189,7 +198,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а ему задают ексепшн
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  mock entity is restored!
 	 */
 	public function testRestoredSetException() {
@@ -199,7 +208,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Мок вернули, а ему задают возвращаемые значения
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  mock entity is restored!
 	 */
 	public function testRestoredReturnList() {
@@ -219,7 +228,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Вызывали ли мок хотя бы раз
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  is not called!
 	 */
 	public function testMockCallCheck() {
@@ -229,12 +238,22 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Метод без аргументов
 	 *
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage  method expectArgs() requires at least one arg!
 	 */
 	public function testExpectedArgs() {
 		$mock = $this->_getMock()->expectCall(0);
 		$mock->expectArgs();
+	}
+
+	/**
+	 * Метод с аргументом null
+	 */
+	public function testExpectedArgsNull() {
+		$mock = $this->_getMock()->expectCall(0);
+		$mock->expectArgs(null);
+		// При значении null не вылетел ексепшн с проверки на пустоту
+		self::assertTrue(true);
 	}
 
 
@@ -343,7 +362,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * нельзя просниффать при полной подмене
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage Sniff mode does not support full mock
 	 */
 	public function testSniff() {
@@ -355,7 +374,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * нельзя мокать отнаследованное через анонимные функции
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage can't mock inherited method _redefinedFunc as Closure
 	 */
 	public function testMockInheritedClosure() {
@@ -367,7 +386,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * нельзя мокать отнаследованное непереопределённое
-	 * @expectedException Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage method staticFunc is declared in parent class
 	 */
 	public function testMockInheritedNotRedeclared() {
