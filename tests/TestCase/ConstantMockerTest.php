@@ -3,7 +3,6 @@ namespace ArtSkills\Test\TestCase;
 
 use ArtSkills\Mock\ConstantMocker;
 use ArtSkills\Test\Fixture\MockTestFixture;
-use \Exception;
 
 /**
  * @covers \ArtSkills\Mock\ConstantMocker
@@ -42,7 +41,7 @@ class ConstantMockerTest extends \PHPUnit_Framework_TestCase
     /**
      * Проверка на существование константы
      *
-     * @expectedException Exception
+     * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage is not defined!
      */
     public function testConstantExists() {
@@ -52,7 +51,7 @@ class ConstantMockerTest extends \PHPUnit_Framework_TestCase
     /**
      * Дважды одно и то же мокнули
      *
-     * @expectedException Exception
+     * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage is already mocked!
 	 */
     public function testConstantDoubleMock() {

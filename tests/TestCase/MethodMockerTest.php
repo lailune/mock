@@ -80,7 +80,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Дважды замокали один метов
 	 *
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage methodNoArgs already mocked!
 	 */
 	public function testDuplicateMock() {
@@ -91,7 +91,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Вызвали несуществующий запмоканый метод
 	 *
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage notExists mock object doesn't exist!
 	 */
 	public function testNotExistsMockCall() {
@@ -119,7 +119,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Несуществующий класс
 	 *
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage class "BadClass" does not exist!
 	 */
 	public function testCallPrivateBadClass() {
@@ -129,7 +129,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Несуществующий метод
 	 *
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage method "BlaBla" in class "ArtSkills\Test\Fixture\MockTestFixture" does not exist!
 	 */
 	public function testCallPrivateBadMethod() {
@@ -139,7 +139,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * вызов публичного
 	 *
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage is not private and is not protected!
 	 */
 	public function testCallPrivatePublic() {
@@ -153,8 +153,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * ожидалось без аргументов, а они есть
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage expected no args, but real args:
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage expected no args, but they appeared
 	 */
 	public function testUnexpectedArgs() {
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')->expectArgs(false);
@@ -163,8 +163,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * меньше аргументов, чем ожидалось
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage expected args:
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected args
 	 */
 	public function testLessArgs() {
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')->expectArgs('asd', 'qwe', 'zxc');
@@ -173,8 +173,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * больше аргументов, чем ожидалось
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage expected args:
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected args
 	 */
 	public function testMoreArgs() {
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')->expectArgs('asd');
@@ -183,8 +183,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * не то значение аргумента
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage expected args:
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected args
 	 */
 	public function testBadArgs() {
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')->expectArgs('asd', 'zxc');
@@ -193,8 +193,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * аргументы не в том порядке
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage expected args:
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected args
 	 */
 	public function testOrderArgs() {
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')->expectArgs('qwe', 'asd');
@@ -223,7 +223,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * не вызван
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage is not called!
 	 */
 	public function testNotCalled() {
@@ -233,8 +233,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * вызван меньше, чем ожидалось
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage is called 1 times, expected 2
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected call count
 	 */
 	public function testCalledLess() {
 		MethodMocker::mock(MockTestFixture::class, 'staticMethodArgs')->expectCall(2);
@@ -244,7 +244,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * вызван больше, чем ожидалось
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage expected 1 calls, but more appeared
 	 */
 	public function testCalledMore() {
@@ -284,7 +284,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 			MethodMocker::restore();
 			self::fail('должен был выкинуться ексепшн');
 		} catch (\Exception $e) {
-			$this->assertStringEndsWith(' - is not called!', $e->getMessage());
+			$this->assertContains(' - is not called!', $e->getMessage());
 		}
 		self::assertTrue($mock1->isRestored());
 		self::assertTrue($mock2->isRestored());
@@ -372,7 +372,7 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * Вызовов больше, чем значений в списке
 	 *
-	 * @expectedException \Exception
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage return value list ended
 	 */
 	public function testReturnListMore() {
@@ -449,8 +449,8 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 	/**
 	 * переопределение expectArgs, срабатывание проверки
 	 *
-	 * @expectedException \Exception
-	 * @expectedExceptionMessage , but real args:
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected args
 	 */
 	public function testRedefineFail() {
 		$mock = MethodMocker::mock(MockTestFixture::class, 'staticFunc');

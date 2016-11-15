@@ -14,7 +14,7 @@ class MethodMocker
 	/**
 	 * Стэк моков в рамках одного теста
 	 *
-	 * @var array
+	 * @var MethodMockerEntity[]
 	 */
 	private static $_mockList = [];
 
@@ -25,7 +25,7 @@ class MethodMocker
 	 * @param string $methodName
 	 * @param string|null $newAction новое событие метода
 	 * @return MethodMockerEntity
-	 * @throws \Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	public static function mock($className, $methodName, $newAction = null) {
 		self::_newMockCheck($className, $methodName);
@@ -42,7 +42,7 @@ class MethodMocker
 	 * @param null|callable $sniffAction функция, вызываемая при вызове подслушиваемого метода: function($args,
 	 *     $originalResult) {}, $originalResult - результат выполнения подслушиваемого метода
 	 * @return MethodMockerEntity
-	 * @throws \Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	public static function sniff($className, $methodName, $sniffAction = null) {
 		self::_newMockCheck($className, $methodName);
@@ -59,12 +59,12 @@ class MethodMocker
 	 *
 	 * @param string $className
 	 * @param string $methodName
-	 * @throws \Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	private static function _newMockCheck($className, $methodName) {
 		$key = self::_buildKey($className, $methodName);
 		if (isset(self::$_mockList[$key])) {
-			throw new \Exception($key . ' already mocked!');
+			self::fail($key . ' already mocked!');
 		}
 	}
 
@@ -86,16 +86,13 @@ class MethodMocker
 	 * @param array $args
 	 * @param mixed $origMethodResult результат выполнения оригинального метода в режиме снифа
 	 * @return mixed
-	 * @throws \Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	public static function doAction($mockKey, $args, $origMethodResult = null) {
 		if (!isset(self::$_mockList[$mockKey])) {
-			throw new \Exception($mockKey . " mock object doesn't exist!");
+			self::fail($mockKey . " mock object doesn't exist!");
 		}
 
-		/**
-		 * @var MethodMockerEntity $mockObject
-		 */
 		$mockObject = self::$_mockList[$mockKey];
 		return $mockObject->doAction($args, $origMethodResult);
 	}
@@ -104,11 +101,10 @@ class MethodMocker
 	 * Возвращаем все подмененные методы
 	 *
 	 * @param bool $hasFailed был ли тест завален
-	 * @throws \Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	public static function restore($hasFailed = false) {
 		$firstError = null;
-		/** @var MethodMockerEntity $mock */
 		foreach (self::$_mockList as $mock) {
 			try {
 				$mock->restore($hasFailed);
@@ -132,26 +128,26 @@ class MethodMocker
 	 * @param string $methodName
 	 * @param array|null $args аргументы вызова
 	 * @return mixed
-	 * @throws \Exception
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
 	 */
 	public static function callPrivate($object, $methodName, $args = null) {
 		if (is_string($object)) {
 			$className = $object;
 			$object = null;
 			if (!class_exists($className)) {
-				throw new \Exception('class "' . $className . '" does not exist!');
+				self::fail('class "' . $className . '" does not exist!');
 			}
 		} else {
 			$className = get_class($object);
 		}
 
 		if (!method_exists($className, $methodName)) {
-			throw new \Exception('method "' . $methodName . '" in class "' . $className . '" does not exist!');
+			self::fail('method "' . $methodName . '" in class "' . $className . '" does not exist!');
 		}
 
 		$reflectionMethod = new ReflectionMethod($className, $methodName);
 		if (!$reflectionMethod->isPrivate() && !$reflectionMethod->isProtected()) {
-			throw new \Exception('method "' . $methodName . '" in class "' . $className . '" is not private and is not protected!');
+			self::fail('method "' . $methodName . '" in class "' . $className . '" is not private and is not protected!');
 		}
 
 		$reflectionMethod->setAccessible(true);
@@ -163,5 +159,39 @@ class MethodMocker
 
 		$reflectionMethod->setAccessible(false);
 		return $result;
+	}
+
+	/**
+	 * Завалить тест
+	 * Зависимость от PHPUnit
+	 * Определено в одном месте на все классы
+	 *
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
+	 * @param string $message
+	 */
+	public static function fail($message) {
+		if (class_exists('\PHPUnit_Framework_Assert') && method_exists('\PHPUnit_Framework_Assert', 'fail')) {
+			\PHPUnit_Framework_Assert::fail($message);
+		} else {
+			throw new \Exception($message); // @codeCoverageIgnore
+		}
+	}
+
+	/**
+	 * Сравнение с заваливанием теста
+	 * Зависимость от PHPUnit
+	 * Определено в одном месте на все классы
+	 *
+	 * @throws \PHPUnit_Framework_AssertionFailedError|\Exception
+	 * @param mixed $expected
+	 * @param mixed $actual
+	 * @param string $message
+	 */
+	public static function assertEquals($expected, $actual, $message = '') {
+		if (class_exists('\PHPUnit_Framework_Assert') && method_exists('\PHPUnit_Framework_Assert', 'assertEquals')) {
+			\PHPUnit_Framework_Assert::assertEquals($expected, $actual, $message);
+		} elseif ($expected != $actual) {
+			throw new \Exception($message, ' expected: ' . print_r($expected, true) . ', actual: ' . print_r($actual, true)); // @codeCoverageIgnore
+		}
 	}
 }
