@@ -22,8 +22,8 @@ MethodMockerEntity MethodMocker::mock(string $className, string $methodName, str
     * `expectCall(int <кол-во>)` - если мы специально хотим указать, что вызовов быть не должно, то `$mock->expectCall(0);`
 * Проверка входных параметров 
     * `expectArgs(mixed <аргумент1>, mixed <аргумент2>, ..)` Для указания того, что метод должен быть вызван без аргументов, нужно передать одно значение false
-    * `expectArgsList(array <список списков аргументов>)`
-* Добавление переменной для `willReturnAction` - `setAdditionalVar(mixed <переменная>)` Аналогично `expectArgs()`, но на несколько вызовов
+    * `expectArgsList(array <список списков аргументов>)`  Аналогично `expectArgs()`, но на несколько вызовов
+* Добавление переменной для `willReturnAction` - `setAdditionalVar(mixed <переменная>)`
 * Возвращаемое значение
     * `willReturnValue(mixed <значние>)`
     * `willReturnAction(function($args) { /* код проверки */;  return 'mock result';})` будет вызвана функция, результат которой вернется в качестве ответа мока
