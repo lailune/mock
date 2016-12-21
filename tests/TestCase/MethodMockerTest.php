@@ -219,6 +219,61 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		self::assertEquals('protected args goooood arrrrgs', MethodMocker::callPrivate($testObject, '_protectedArgs', [$arg]));
 	}
 
+	/**
+	 * хороший список аргументов
+	 */
+	public function testArgsListGood() {
+		$expectedArgs = [
+			false,
+			['asd', 'qwe'],
+			false,
+			[1],
+			[2],
+		];
+		$testObject = new MockTestFixture();
+		MethodMocker::mock(MockTestFixture::class, 'methodNoArgs')->expectArgsList($expectedArgs);
+		$testObject->methodNoArgs();
+		$testObject->methodNoArgs(...$expectedArgs[1]);
+		$testObject->methodNoArgs();
+		$testObject->methodNoArgs(...$expectedArgs[3]);
+		self::assertTrue(true, 'Проверки не свалились');
+	}
+
+	/**
+	 * Спасок ожидаемых аргументов закончился
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage expect args list ended
+	 */
+	public function testArgsListShort() {
+		$expectedArgs = [
+			false,
+		];
+		$testObject = new MockTestFixture();
+		MethodMocker::mock(MockTestFixture::class, 'methodNoArgs')->expectArgsList($expectedArgs);
+		$testObject->methodNoArgs();
+		$testObject->methodNoArgs();
+	}
+
+	/**
+	 * Ожидаемые аргументы не совпали
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage expected no args, but they appeared
+	 */
+	public function testArgsListFail() {
+		$expectedArgs = [
+			false,
+			false,
+		];
+		$testObject = new MockTestFixture();
+		MethodMocker::mock(MockTestFixture::class, 'methodNoArgs')->expectArgsList($expectedArgs);
+		$testObject->methodNoArgs();
+		$testObject->methodNoArgs(123);
+	}
+
+
+
 
 
 	/**
@@ -406,16 +461,20 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		];
 		self::assertEquals($returnList, $returned);
 
+		$expectArgsList = [
+			false,
+			[123, 234],
+		];
 		$returnList = ['list2', 'list3'];
-		$mock->willReturnValueList($returnList);
+		$mock->expectArgsList($expectArgsList)->willReturnValueList($returnList);
 		$returned = [
 			MockTestFixture::staticFunc(),
-			MockTestFixture::staticFunc(),
+			MockTestFixture::staticFunc(...$expectArgsList[1]),
 		];
 		self::assertEquals($returnList, $returned);
 
 		$message = 'msg1';
-		$mock->willThrowException($message);
+		$mock->expectArgs(false)->willThrowException($message);
 		try {
 			MockTestFixture::staticFunc();
 			self::fail();
@@ -463,6 +522,27 @@ class MethodMockerTest extends \PHPUnit_Framework_TestCase
 		$mock->expectArgs($expectArgs);
 		MockTestFixture::staticFunc();
 	}
+
+	/**
+	 * переопределение expectArgsList, срабатывание проверки
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage unexpected args
+	 */
+	public function testRedefineListFail() {
+		$mock = MethodMocker::mock(MockTestFixture::class, 'staticFunc');
+
+		$expectArgs = 'arg1';
+		$mock->expectArgs($expectArgs);
+		MockTestFixture::staticFunc($expectArgs);
+
+		$expectArgsList = [false, ['arg2']];
+		$mock->expectArgsList($expectArgsList);
+		MockTestFixture::staticFunc();
+		MockTestFixture::staticFunc();
+	}
+
+
 
 }
 
