@@ -75,6 +75,13 @@ class MethodMockerEntity
 	private $_expectedArgs = null;
 
 	/**
+	 * Предполагаемые аргументы на несколько вызовов
+	 *
+	 * @var null|array
+	 */
+	private $_expectedArgsList = null;
+
+	/**
 	 * Возвращаемый результат
 	 *
 	 * @var null|mixed
@@ -284,6 +291,7 @@ class MethodMockerEntity
 			$this->_fail('method expectArgs() requires at least one arg!');
 		}
 
+		$this->_unsetExpectArgs();
 		if (count($params) === 1 && $params[0] === false) {
 			$this->_expectedArgs = false;
 		} else {
@@ -291,6 +299,27 @@ class MethodMockerEntity
 		}
 
 
+		return $this;
+	}
+
+	/**
+	 * Ожидаемые аргументы на несколько вызовов
+	 *
+	 * @param array $argsList
+	 * @return $this
+	 */
+	public function expectArgsList(array $argsList) {
+		$this->_checkNotRestored();
+		if (empty($argsList)) {
+			$this->_fail('empty args list in expectArgsList()!');
+		}
+		foreach ($argsList as $key => $callArgs) {
+			if ((!is_array($callArgs) && ($callArgs !== false)) || (is_array($callArgs) && empty($callArgs))) {
+				$this->_fail('args list item ' . $key . ': expected not empty array or false');
+			}
+		}
+		$this->_unsetExpectArgs();
+		$this->_expectedArgsList = $argsList;
 		return $this;
 	}
 
@@ -304,6 +333,14 @@ class MethodMockerEntity
 		$this->_checkNotRestored();
 		$this->_additionalVar = $var;
 		return $this;
+	}
+
+	/**
+	 * Сброс ожидаемых значений
+	 */
+	private function _unsetExpectArgs() {
+		$this->_expectedArgs = null;
+		$this->_expectedArgsList = null;
 	}
 
 	/**
@@ -390,25 +427,56 @@ class MethodMockerEntity
 	 */
 	public function doAction($args, $origMethodResult = null) {
 		$this->_checkNotRestored();
+		$this->_incCounter();
+		$this->_checkArgs($args);
+		return $this->_getReturnValue($args, $origMethodResult);
+	}
 
+	/**
+	 * Увеличение счётчика вызовов и проверка кол-ва вызовов
+	 */
+	private function _incCounter() {
 		if (($this->_expectedCallCount > self::EXPECT_CALL_ONCE) && ($this->_callCounter >= $this->_expectedCallCount)) {
 			$this->_fail('expected ' . $this->_expectedCallCount . ' calls, but more appeared');
 		}
 		$this->_isCalled = true;
 		$this->_callCounter++;
+	}
 
-		if ($this->_expectedArgs !== null) {
-			if ($this->_expectedArgs === false) {
+	/**
+	 * Проверка совпадения аргументов с ожидаемыми
+	 *
+	 * @param array $args
+	 */
+	private function _checkArgs($args) {
+		$expectedArgs = $this->_expectedArgs;
+		if (is_null($expectedArgs) && !is_null($this->_expectedArgsList)) {
+			if (empty($this->_expectedArgsList)) {
+				$this->_fail('expect args list ended');
+			}
+			$expectedArgs = array_shift($this->_expectedArgsList);
+		}
+
+		if ($expectedArgs !== null) {
+			if ($expectedArgs === false) {
 				$expectedArgs = [];
 				$message = 'expected no args, but they appeared';
 			} else {
-				$expectedArgs = $this->_expectedArgs;
 				$message = 'unexpected args';
 			}
 
 			$this->_assertEquals($expectedArgs, $args, $message);
 		}
+	}
 
+	/**
+	 * Получить возвращаемое значение для мока
+	 *
+	 * @param array $args
+	 * @param mixed $origMethodResult
+	 * @return mixed
+	 */
+	private function _getReturnValue($args, $origMethodResult) {
 		if ($this->_returnValue !== null) {
 			return $this->_returnValue;
 		} elseif ($this->_returnAction !== null) {

@@ -20,7 +20,9 @@ MethodMockerEntity MethodMocker::mock(string $className, string $methodName, str
     * `singleCall()` - один раз
     * `anyCall()` - как минимум 1 раз (по-умолчанию)
     * `expectCall(int <кол-во>)` - если мы специально хотим указать, что вызовов быть не должно, то `$mock->expectCall(0);`
-* Проверка входных параметров - `expectArgs(mixed <аргумент1>, mixed <аргумент2>, ..)`
+* Проверка входных параметров 
+    * `expectArgs(mixed <аргумент1>, mixed <аргумент2>, ..)` Для указания того, что метод должен быть вызван без аргументов, нужно передать одно значение false
+    * `expectArgsList(array <список списков аргументов>)`  Аналогично `expectArgs()`, но на несколько вызовов
 * Добавление переменной для `willReturnAction` - `setAdditionalVar(mixed <переменная>)`
 * Возвращаемое значение
     * `willReturnValue(mixed <значние>)`

@@ -149,6 +149,16 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	 * @expectedException \PHPUnit_Framework_AssertionFailedError
 	 * @expectedExceptionMessage   mock entity is restored!
 	 */
+	public function testRestoredExpectedList() {
+		$this->_getRestoredMock()->expectArgsList([false]);
+	}
+
+	/**
+	 * Мок вернули, а его конфигурируют
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage   mock entity is restored!
+	 */
 	public function testRestoredWillReturnValue() {
 		$this->_getRestoredMock()->willReturnValue(true);
 	}
@@ -173,16 +183,6 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	 */
 	public function testRestoredDoAction() {
 		$this->_getRestoredMock()->doAction([]);
-	}
-
-	/**
-	 * Мок вернули, а его конфигурируют
-	 *
-	 * @expectedException \PHPUnit_Framework_AssertionFailedError
-	 * @expectedExceptionMessage  mock entity is restored!
-	 */
-	public function testRestoredExpectArgs() {
-		$this->_getRestoredMock()->expectArgs(123);
 	}
 
 	/**
@@ -212,7 +212,7 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 	 * @expectedExceptionMessage  mock entity is restored!
 	 */
 	public function testRestoredReturnList() {
-		$this->_getRestoredMock()->setAdditionalVar(123);
+		$this->_getRestoredMock()->willReturnValueList([true]);
 	}
 
 
@@ -255,6 +255,64 @@ class MethodMockerEntityTest extends \PHPUnit_Framework_TestCase
 		// При значении null не вылетел ексепшн с проверки на пустоту
 		self::assertTrue(true);
 	}
+
+	/**
+	 * Список - не массив
+	 *
+	 * @expectedException \PHPUnit_Framework_Error
+	 * @expectedExceptionMessage  must be of the type array, boolean given
+	 */
+	public function testExpectedArgsListBadList() {
+		$mock = $this->_getMock()->expectCall(0);
+		$mock->expectArgsList(false);
+	}
+
+	/**
+	 * Список пуст
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage  empty args list in expectArgsList()
+	 */
+	public function testExpectedArgsListEmpty() {
+		$mock = $this->_getMock()->expectCall(0);
+		$mock->expectArgsList([]);
+	}
+
+	/**
+	 * null в списке
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage  args list item 1: expected not empty array or false
+	 */
+	public function testExpectedArgsListNull() {
+		$mock = $this->_getMock()->expectCall(0);
+		$mock->expectArgsList([false, null]);
+	}
+
+	/**
+	 * true в списке
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage  args list item 2: expected not empty array or false
+	 */
+	public function testExpectedArgsListTrue() {
+		$mock = $this->_getMock()->expectCall(0);
+		$mock->expectArgsList([false, [1], true]);
+	}
+
+	/**
+	 * пустой массив в списке
+	 *
+	 * @expectedException \PHPUnit_Framework_AssertionFailedError
+	 * @expectedExceptionMessage  args list item 0: expected not empty array or false
+	 */
+	public function testExpectedArgsListEmptyArr() {
+		$mock = $this->_getMock()->expectCall(0);
+		$mock->expectArgsList([[]]);
+	}
+
+
+
 
 
 	/**
